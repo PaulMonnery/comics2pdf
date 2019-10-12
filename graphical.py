@@ -8,34 +8,45 @@ from PIL import Image
 import PIL.ExifTags
 import shutil
 
-# class Explorer(QtWidgets.QWidget):
+class Explorer(QtWidgets.QWidget):
 
-#     def __init__(self):
-#         super().__init__()
-#         self.title = 'Explorer'
-#         self.left = 10
-#         self.top = 10
-#         self.width = 640
-#         self.height = 480
-#         self.path = ''
-#         self.initUI()
+    def __init__(self, isFile):
+        super().__init__()
+        self.title = 'Explorer'
+        self.left = 10
+        self.top = 10
+        self.width = 640
+        self.height = 480
+        self.path = ''
+        self.isFile = isFile
+        self.initUI()
 
-#     def initUI(self):
-#         self.setWindowTitle(self.title)
-#         self.setGeometry(self.left, self.top, self.width, self.height)
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
 
-#         self.openFileNameDialog()
+        if self.isFile:
+            self.openFileNameDialog()
+        else:
+            self.openDirectoryNameDialog()
 
-#         self.show()
-#         self.hide()
+        self.show()
+        self.hide()
 
-#     def openFileNameDialog(self):
-#         options = QtWidgets.QFileDialog.Options()
-#         options |= QtWidgets.QFileDialog.DontUseNativeDialog
-#         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
-#             self, "QFileDialog.getOpenFileName()", "", "All Files (*);;Python Files (*.py)", options=options)
-#         if fileName:
-#             self.path = fileName
+    def openFileNameDialog(self):
+        options = QtWidgets.QFileDialog.Options()
+        fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "QFileDialog.getOpenFileName()", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options)
+        if fileName:
+            print(fileName)
+            self.path = fileName
+
+    def openDirectoryNameDialog(self):
+        options = QtWidgets.QFileDialog.Options()
+        fileName = QtWidgets.QFileDialog.getExistingDirectory(self, options=options)
+        if fileName:
+            print(fileName)
+            self.path = fileName
 
 
 class AppGUI(object):
@@ -48,12 +59,17 @@ class AppGUI(object):
         self.nb_files = 0
         self.done = 0
 
-    # def on_button_clicked(self):
-    #     explorer = Explorer()
-    #     self.path = explorer.path
+    def on_button_clicked(self):
+        if self.file.isChecked():
+            explorer = Explorer(True)
+        else:
+            explorer = Explorer(False)
+
+        self.path = explorer.path
+        self.pathTo.setText(self.path)
 
     def setupUi(self, Form):
-        Form.setObjectName("Form")
+        Form.setObjectName("Comics2pdf GUI")
         Form.resize(536, 164)
         self.error_dialog = QtWidgets.QErrorMessage()
 
@@ -74,7 +90,7 @@ class AppGUI(object):
         self.browse = QtWidgets.QPushButton(Form)
         self.browse.setGeometry(QtCore.QRect(420, 20, 91, 33))
         self.browse.setObjectName("browse")
-        # self.browse.clicked.connect(self.on_button_clicked)
+        self.browse.clicked.connect(self.on_button_clicked)
 
         self.inputType = QtWidgets.QButtonGroup(Form)
         self.inputType.setObjectName("inputType")
@@ -106,7 +122,7 @@ class AppGUI(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Form"))
+        Form.setWindowTitle(_translate("Form", "Comics2pdf GUI"))
         self.folder.setText(_translate("Form", "Folder"))
         self.convert.setText(_translate("Form", "Convert"))
         self.browse.setText(_translate("Form", "Browse"))
