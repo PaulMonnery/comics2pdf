@@ -7,11 +7,11 @@ You can use it on a file or a directory, just specifie the input method via a fl
 ```
 python3 comic2pdf.py -d [path/to/directory]
 ```
-> Convert all files in the given directory
+Converts all files from the given directory
 ```
 python3 comic2pdf.py -f [path/to/file]
 ```
-> Convert the file
+Converts the given file
 
 ### Prerequisites
 
@@ -23,7 +23,7 @@ pip3 install zipfile36 patool pillow
 
 ### Installing
 
-install the required module in a virtualenv to run it in while keeping the script in a specific folder, or install the module for your user and run:
+Install the required modules in a virtualenv to run it in while keeping the script in a specific folder, or install the module for your user and run:
 ```
 chmod 755 comic2pdf.py
 sudo mv comic2pdf.py /usr/bin/c2p
