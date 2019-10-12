@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Converts .cbr and .cbz files to .pdf
-#
+# Author: PaulMonnery
 # Forked from:  MComas1
 # License:  You can do what you want with it.
 # Mainly based on a script by Bransorem (https://github.com/bransorem/comic2pdf)
