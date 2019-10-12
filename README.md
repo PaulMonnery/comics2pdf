@@ -1,42 +1,33 @@
 # comics2pdf
-A script to convert comic files (cbr, cbz) to pdf, in python3. Works in Windows. Linux not tested.
+A script that converts comic files (cbr, cbz) to pdf, in python3. Works on Linux
 
 ## Getting Started
 
-To use it, just place the .py script in the same directory the file(s) to convert are in and run the command:
-
+You can use it on a file or a directory, just specifie the input method via a flag:
 ```
-python comic2pdf.py
+python3 comic2pdf.py -d [path/to/directory]
 ```
+> Convert all files in the given directory
+```
+python3 comic2pdf.py -f [path/to/file]
+```
+> Convert the file
 
 ### Prerequisites
 
-Script in Python 3.6 (probably won't work with Python 2.x versions). Requires the "zipfile", "patool" and "pillow"(aka PIL) modules in order to work correctly. To install them run the following commands:
+Script in Python 3.6 (probably won't work with Python 2.x versions). Requires the "zipfile36", "patool" and "pillow" (aka PIL) modules in order to work correctly. To install them run the following commands:
 
 ```
-pip install zipfile
+pip3 install zipfile36 patool pillow
 ```
-```
-pip install patool
-```
-```
-pip install pillow
-```
-In windows you'll need to run cmd.exe using the "run as administrator" option for those commands to work.
 
 ### Installing
 
-Just place all the .cbr/.cbz files desired to convert to pdf in one directory, place the script in that same directory and run the following command:
-
+install the required module in a virtualenv to run it in while keeping the script in a specific folder, or install the module for your user and run:
 ```
-python comic2pdf.py
+chmod 755 comic2pdf.py
+sudo mv comic2pdf.py /usr/bin/c2p
 ```
-
-It's a good idea to rename (before running the script) the .cbr/.cbz files that have names like "01.cbz" to "Comic Name 01.cbz", as the output .pdf will get its name from the input comic file.
-
-## Built With
-
-* [Python 3]
 
 ## Authors and Acknowledgments
 
