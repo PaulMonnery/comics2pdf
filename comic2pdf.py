@@ -12,7 +12,6 @@ import patoolib
 from PIL import Image
 import PIL.ExifTags
 
-
 def handle_rar(filein):
     tmp_dir = "/tmp/c2p/"
     os.mkdir(tmp_dir)
@@ -25,8 +24,7 @@ def handle_rar(filein):
         clean_tmp_dir(tmp_dir)
     except:
         print("Error while deleting tmp dir")
-    print('\x1b[1;32m' + "\"" + newfile[:-4] +
-          "\" successfully converted!" + '\x1b[0m')
+    print('\x1b[1;32m' + "\"" + newfile[:-4] + "\" successfully converted!" + '\x1b[0m')
 
 
 def handle_zip(filein):
@@ -42,8 +40,7 @@ def handle_zip(filein):
         clean_tmp_dir(tmp_dir)
     except:
         print("Error while deleting tmp dir")
-    print('\x1b[1;32m' + "\"" + newfile[:-4] +
-          "\" successfully converted!" + '\x1b[0m')
+    print('\x1b[1;32m' + "\"" + newfile[:-4] + "\" successfully converted!" + '\x1b[0m')
 
 
 def to_pdf(filename, newdir, ii):
@@ -62,7 +59,7 @@ def to_pdf(filename, newdir, ii):
             sys.stdout.write("Conversion: {0:.0f}%\r".format(
                 index / list_len * 100))
             if (image.endswith(".jpg") or image.endswith(".JPG") or image.endswith(".jpeg") or image.endswith(".JPEG")):
-                im1 = Image.open(newdir+image)
+                im1 = Image.open(newdir + image)
                 try:
                     im1.save(newdir + image, dpi=(96, 96))
                 except:
@@ -112,11 +109,8 @@ def start():
         elif sys.argv[1] == '-f' and os.path.isfile(sys.argv[2]):
             launch_convert(sys.argv[2])
         else:
-            print(
-                "Bad argument. Please use:\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file")
+            print("Bad argument. Please use:\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file")
     else:
-        print(
-            "Please specifie arguments.\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file")
-
+        print("Please specifie arguments.\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file")
 
 start()
