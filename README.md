@@ -1,5 +1,5 @@
 # comics2pdf
-Python3 script and GUI that converts comic files (cbr, cbz) to pdf (on Linux)
+Python3 script and GUI that converts comic files (cbr, cbz) to pdf (on Linux/Mac)
 
 <p align="center">
   <img src='screenshot_GUI.png'/>

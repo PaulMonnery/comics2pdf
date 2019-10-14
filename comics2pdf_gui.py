@@ -44,16 +44,14 @@ class Explorer(QtWidgets.QWidget):
     def openFileNameDialog(self):
         options = QtWidgets.QFileDialog.Options()
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "QFileDialog.getOpenFileName()", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options)
+            self, "Find File", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options)
         if fileName:
-            print(fileName)
             self.path = fileName
 
     def openDirectoryNameDialog(self):
         options = QtWidgets.QFileDialog.Options()
         fileName = QtWidgets.QFileDialog.getExistingDirectory(self, options=options)
         if fileName:
-            print(fileName)
             self.path = fileName
 
 
@@ -68,12 +66,9 @@ class AppGUI(object):
         self.done = 0
 
     def on_button_clicked(self):
-        if self.file.isChecked():
-            explorer = Explorer(True)
-        else:
-            explorer = Explorer(False)
-
-        self.path = explorer.path
+        explorer = Explorer(self.file.isChecked())
+        if (explorer.path):
+            self.path = explorer.path
         self.pathTo.setText(self.path)
 
     def setupUi(self, Form):
