@@ -73,7 +73,7 @@ class AppGUI(object):
 
     def setupUi(self, Form):
         Form.setObjectName("Comics2pdf GUI")
-        Form.resize(536, 164)
+        Form.setFixedSize(536, 164)
         self.error_dialog = QtWidgets.QErrorMessage()
 
         self.convert = QtWidgets.QPushButton(Form)
