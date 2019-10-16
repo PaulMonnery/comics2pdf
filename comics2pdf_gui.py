@@ -15,6 +15,8 @@ import patoolib
 from PIL import Image
 import PIL.ExifTags
 import shutil
+import tempfile
+import platform
 
 class Explorer(QtWidgets.QWidget):
 
@@ -64,6 +66,14 @@ class AppGUI(object):
         self.global_process = 0
         self.nb_files = 0
         self.done = 0
+        self.tmp_directory = tempfile.gettempdir()
+        self.current_os = platform.system()
+
+    def separator(self):
+        if self.current_os == 'Windows':
+            return ('\\')
+        else:
+            return ('/')
 
     def on_button_clicked(self):
         explorer = Explorer(self.file.isChecked())
@@ -166,7 +176,7 @@ class AppGUI(object):
             self.handle_rar(file)
 
     def handle_rar(self, filein):
-        tmp_dir = "/tmp/c2p/"
+        tmp_dir = self.tmp_directory + self.separator() + "c2p" + self.separator()
         os.mkdir(tmp_dir)
         patoolib.extract_archive(filein, outdir=tmp_dir)
         newfile = filein.replace(filein[-4:], ".pdf")
@@ -174,8 +184,8 @@ class AppGUI(object):
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def handle_zip(self, filein):
+        tmp_dir = self.tmp_directory + self.separator() + "c2p" + self.separator()
         zip_ref = zipfile.ZipFile(filein, 'r')
-        tmp_dir = "/tmp/c2p/"
         zip_ref.extractall(tmp_dir)
         zip_ref.close()
         newfile = filein.replace(filein[-4:], ".pdf")
@@ -184,10 +194,10 @@ class AppGUI(object):
 
     def to_pdf(self, filename, newdir, ii):
         self.indication.setText("Exctracting images...")
-        self.ratio.setText(str(self.done) + '/' + str(self.nb_files))
+        self.ratio.setText(str(self.done) + self.separator() + str(self.nb_files))
         ffiles = os.listdir(newdir)
         if (len(ffiles) == 1):
-            self.to_pdf(filename, newdir + ffiles[0] + "/", ii)
+            self.to_pdf(filename, newdir + ffiles[0] + self.separator(), ii)
         else:
             im_list = list()
             firstP = True
@@ -199,7 +209,8 @@ class AppGUI(object):
                 index += 1
                 local_process = index / list_len * 100 // self.nb_files
                 self.conversionProgress.setProperty("value", "{0:.0f}".format(local_process + self.global_process))
-                if (image.endswith(".jpg") or image.endswith(".JPG") or image.endswith(".jpeg") or image.endswith(".JPEG")):
+                if (image.endswith(".jpg") or image.endswith(".JPG")
+                or image.endswith(".jpeg") or image.endswith(".JPEG")):
                     if local_process * self.nb_files > 95:
                         if increased == False:
                             self.done += 1

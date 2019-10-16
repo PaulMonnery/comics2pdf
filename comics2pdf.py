@@ -11,42 +11,49 @@ import zipfile
 import patoolib
 from PIL import Image
 import PIL.ExifTags
+import shutil
+import tempfile
+import platform
+
+tmp_directory = tempfile.gettempdir()
+current_os = platform.system()
+
+def separator():
+    if current_os == 'Windows':
+        return ('\\')
+    else:
+        return ('/')
+
 
 def handle_rar(filein):
-    tmp_dir = "/tmp/c2p/"
+    tmp_dir = tmp_directory + separator() + "c2p" + separator()
     os.mkdir(tmp_dir)
     print("Extracting pictures in the CBR file...")
     patoolib.extract_archive(filein, outdir=tmp_dir)
     newfile = filein.replace(filein[-4:], ".pdf")
     print("Creating the PDF file...")
     to_pdf(newfile, tmp_dir, 7)
-    try:
-        clean_tmp_dir(tmp_dir)
-    except:
-        print("Error while deleting tmp dir")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
     print('\x1b[1;32m' + "\"" + newfile[:-4] + "\" successfully converted!" + '\x1b[0m')
 
 
 def handle_zip(filein):
+    tmp_dir = tmp_directory + separator() + "c2p" + separator()
     zip_ref = zipfile.ZipFile(filein, 'r')
-    tmp_dir = "/tmp/c2p/"
     print("Extracting pictures in the CBZ file...")
     zip_ref.extractall(tmp_dir)
     zip_ref.close()
     newfile = filein.replace(filein[-4:], ".pdf")
     print("Creating the PDF file...")
     to_pdf(newfile, tmp_dir, 0)
-    try:
-        clean_tmp_dir(tmp_dir)
-    except:
-        print("Error while deleting tmp dir")
+    shutil.rmtree(tmp_dir, ignore_errors=True)
     print('\x1b[1;32m' + "\"" + newfile[:-4] + "\" successfully converted!" + '\x1b[0m')
 
 
 def to_pdf(filename, newdir, ii):
     ffiles = os.listdir(newdir)
     if (len(ffiles) == 1):
-        to_pdf(filename, newdir + ffiles[0] + "/", ii)
+        to_pdf(filename, newdir + ffiles[0] + separator(), ii)
     else:
         im_list = list()
         firstP = True
@@ -58,7 +65,8 @@ def to_pdf(filename, newdir, ii):
             sys.stdout.flush()
             sys.stdout.write("Conversion: {0:.0f}%\r".format(
                 index / list_len * 100))
-            if (image.endswith(".jpg") or image.endswith(".JPG") or image.endswith(".jpeg") or image.endswith(".JPEG")):
+            if (image.endswith(".jpg") or image.endswith(".JPG")
+            or image.endswith(".jpeg") or image.endswith(".JPEG")):
                 im1 = Image.open(newdir + image)
                 try:
                     im1.save(newdir + image, dpi=(96, 96))
@@ -73,19 +81,8 @@ def to_pdf(filename, newdir, ii):
             else:
                 continue
         print("Saving the PDF file...")
-        im.save(filename, "PDF", resolution=100.0,
-                save_all=True, append_images=im_list)
-        clean_tmp_dir(newdir)
-
-
-def clean_tmp_dir(dir):
-    try:
-        files = os.listdir(dir)
-        for file in files:
-            os.remove(dir + "/" + file)
-        os.rmdir(dir)
-    except:
-        print("No dir to clean!")
+        im.save(filename, "PDF", resolution=100.0, save_all=True, append_images=im_list)
+        shutil.rmtree(newdir, ignore_errors=True)
 
 
 def launch_convert(file):
@@ -97,7 +94,7 @@ def launch_convert(file):
 
 def opendir(directory):
     for file in sorted(os.listdir(directory)):
-        launch_convert(directory + '/' + file)
+        launch_convert(directory + separator() + file)
     if False:
         print("WARNING: some items were skipped")
 

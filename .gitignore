@@ -1,4 +1,5 @@
 venv/
+data/
 target/
 src/
 .vscode
