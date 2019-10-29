@@ -112,8 +112,6 @@ if __name__ == "__main__":
         elif sys.argv[1] == '-f' and os.path.isfile(sys.argv[2]):
             launch_convert(sys.argv[2])
         else:
-            print("Bad argument. Please use:\n\t-d [path/to/folder] to all \
-            files in folder\n\t-f [path/to/file] to convert a single file")
+            print("Bad argument. Please use:\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file")
     else:
-        print("Please specifie arguments.\n\t-d [path/to/folder] to all \
-        files in folder\n\t-f [path/to/file] to convert a single file")
+        print("Please specifie arguments.\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file")
