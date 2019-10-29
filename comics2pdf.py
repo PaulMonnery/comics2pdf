@@ -105,8 +105,7 @@ def opendir(directory):
     for file in sorted(os.listdir(directory)):
         launch_convert(directory + separator() + file)
 
-
-def main():
+if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == '-d' and os.path.isdir(sys.argv[2]):
             opendir(sys.argv[2])
@@ -118,6 +117,3 @@ def main():
     else:
         print("Please specifie arguments.\n\t-d [path/to/folder] to all \
         files in folder\n\t-f [path/to/file] to convert a single file")
-
-if __name__ == "__main__":
-    main()
