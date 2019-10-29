@@ -65,7 +65,7 @@ def to_pdf(filename, newdir):
     image_list = []
     get_files(image_list,  newdir)
     im_list = list()
-    is_first_picture = True
+    is_first_image = True
     im = None
     index = 0
     list_len = len(image_list)
@@ -75,6 +75,7 @@ def to_pdf(filename, newdir):
         sys.stdout.flush()
         sys.stdout.write("Conversion: {0:.0f}%\r".format(index / list_len * 100))
         img = Image.open(image)
+
         try:
             if img.mode == 'RGBA':
                 img = img.convert('RGB')
@@ -82,9 +83,9 @@ def to_pdf(filename, newdir):
         except:
             print("Error")
 
-        if (is_first_picture):
+        if (is_first_image):
             im = img
-            is_first_picture = False
+            is_first_image = False
         else:
             im_list.append(img)
     print("Saving the PDF file...")
@@ -103,8 +104,6 @@ def launch_convert(file):
 def opendir(directory):
     for file in sorted(os.listdir(directory)):
         launch_convert(directory + separator() + file)
-    if False:
-        print("WARNING: some items were skipped")
 
 
 def main():

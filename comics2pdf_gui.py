@@ -166,8 +166,6 @@ class AppGUI(object):
                 self.nb_files += 1
         for file in directory_list:
             self.launch_convert(directory + '/' + file)
-        if False:
-            print("WARNING: some items were skipped")
 
     def launch_convert(self, file):
         if (file[-4:] == '.cbz' or file[-4:] == '.zip'):
@@ -177,10 +175,13 @@ class AppGUI(object):
 
     def handle_rar(self, filein):
         tmp_dir = self.tmp_directory + self.separator() + "c2p" + self.separator()
-        os.mkdir(tmp_dir)
+        try:
+            os.mkdir(tmp_dir)
+        except:
+            print("Temporary folder already exists")
         patoolib.extract_archive(filein, outdir=tmp_dir)
         newfile = filein.replace(filein[-4:], ".pdf")
-        self.to_pdf(newfile, tmp_dir, 7)
+        self.to_pdf(newfile, tmp_dir)
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def handle_zip(self, filein):
@@ -189,49 +190,62 @@ class AppGUI(object):
         zip_ref.extractall(tmp_dir)
         zip_ref.close()
         newfile = filein.replace(filein[-4:], ".pdf")
-        self.to_pdf(newfile, tmp_dir, 0)
+        self.to_pdf(newfile, tmp_dir)
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    def to_pdf(self, filename, newdir, ii):
+    def get_files(self, f, dir):
+        files = os.listdir(dir)
+        for file in files:
+            path = dir + self.separator() + file
+            if os.path.isdir(path):
+                self.get_files(f, path)
+            else:
+                f.append(path)
+
+
+    def to_pdf(self, filename, newdir):
         self.indication.setText("Exctracting images...")
         self.ratio.setText(str(self.done) + self.separator() + str(self.nb_files))
-        ffiles = os.listdir(newdir)
-        if (len(ffiles) == 1):
-            self.to_pdf(filename, newdir + ffiles[0] + self.separator(), ii)
-        else:
-            im_list = list()
-            firstP = True
-            im = None
-            increased = False
-            index = 0
-            list_len = len(ffiles)
-            for image in sorted(ffiles):
-                index += 1
-                local_process = index / list_len * 100 // self.nb_files
-                self.conversionProgress.setProperty("value", "{0:.0f}".format(local_process + self.global_process))
-                if (image.endswith(".jpg") or image.endswith(".JPG")
-                or image.endswith(".jpeg") or image.endswith(".JPEG")):
-                    if local_process * self.nb_files > 95:
-                        if increased == False:
-                            self.done += 1
-                            increased = True
-                        self.indication.setText("Saving the created file...")
-                        self.ratio.setText(str(self.done) + '/' + str(self.nb_files))
-                    im1 = Image.open(newdir + image)
-                    try:
-                        im1.save(newdir + image, dpi=(96, 96))
-                    except:
-                        print("Error")
-                    if (firstP):
-                        im = im1
-                        firstP = False
-                    else:
-                        im_list.append(im1)
-                else:
-                    continue
-            im.save(filename, "PDF", resolution=100.0, save_all=True, append_images=im_list)
-            shutil.rmtree(newdir, ignore_errors=True)
-            self.global_process += local_process
+
+        image_list = []
+        self.get_files(image_list,  newdir)
+
+        im_list = list()
+        is_first_image = True
+        im = None
+        increased = False
+        index = 0
+        list_len = len(image_list)
+
+        for image in sorted(image_list):
+            index += 1
+            local_process = index / list_len * 100 // self.nb_files
+            self.conversionProgress.setProperty("value", "{0:.0f}".format(local_process + self.global_process))
+
+            if local_process * self.nb_files > 95:
+                if increased == False:
+                    self.done += 1
+                    increased = True
+                self.indication.setText("Saving the created file...")
+                self.ratio.setText(str(self.done) + '/' + str(self.nb_files))
+            img = Image.open(image)
+
+            try:
+                if img.mode == 'RGBA':
+                    img = img.convert('RGB')
+                img.save(image, dpi=(96, 96))
+            except:
+                print("Error")
+
+            if (is_first_image):
+                im = img
+                is_first_image = False
+            else:
+                im_list.append(img)
+
+        im.save(filename, "PDF", resolution=100.0, save_all=True, append_images=im_list)
+        shutil.rmtree(newdir, ignore_errors=True)
+        self.global_process += local_process
 
 if __name__ == "__main__":
     import sys
