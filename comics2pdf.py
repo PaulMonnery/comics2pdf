@@ -12,7 +12,7 @@ from PIL import Image
 tmp_directory = tempfile.gettempdir()
 
 
-def handle_rar(file_to_exctract, tmp_dir):
+def handle_rar(file_to_exctract: str, tmp_dir: str) -> None:
     try:
         os.mkdir(tmp_dir)
     except OSError:
@@ -34,7 +34,7 @@ def handle_rar(file_to_exctract, tmp_dir):
     print(f'\x1b[1;32m"{converted_name}" successfully converted!\x1b[0m')
 
 
-def handle_zip(file_to_exctract, tmp_dir):
+def handle_zip(file_to_exctract: str, tmp_dir: str) -> None:
     zip_ref = zipfile.ZipFile(file_to_exctract, "r")
     print("Extracting pictures in the CBZ file...")
     zip_ref.extractall(tmp_dir)
@@ -47,7 +47,7 @@ def handle_zip(file_to_exctract, tmp_dir):
     print(f'\x1b[1;32m"{converted_name}" successfully converted!\x1b[0m')
 
 
-def get_files(f, dir):
+def get_files(f: list, dir: str) -> None:
     files = os.listdir(dir)
     for file in files:
         path = os.path.join(dir, file)
@@ -57,7 +57,7 @@ def get_files(f, dir):
             f.append(path)
 
 
-def to_pdf(filename, newdir):
+def to_pdf(filename: str, newdir: str) -> None:
     image_list = []
     get_files(image_list, newdir)
     im_list = list()
@@ -89,15 +89,16 @@ def to_pdf(filename, newdir):
     shutil.rmtree(newdir, ignore_errors=True)
 
 
-def launch_convert(file):
+def launch_convert(file: str) -> None:
     tmp_dir = os.path.join(tmp_directory, "c2p")
-    if file[-4:] == ".cbz" or file[-4:] == ".zip":
+
+    if file.endswith(".cbz") or file.endswith(".zip"):
         handle_zip(file, tmp_dir)
-    elif file[-4:] == ".cbr" or file[-4:] == ".rar":
+    elif file.endswith(".cbr") or file.endswith(".rar"):
         handle_rar(file, tmp_dir)
 
 
-def opendir(directory):
+def process_directory(directory: str) -> None:
     for file in sorted(os.listdir(directory)):
         launch_convert(os.path.join(directory, file))
 
@@ -105,7 +106,7 @@ def opendir(directory):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "-d" and os.path.isdir(sys.argv[2]):
-            opendir(sys.argv[2])
+            process_directory(sys.argv[2])
         elif sys.argv[1] == "-f" and os.path.isfile(sys.argv[2]):
             launch_convert(sys.argv[2])
         else:
