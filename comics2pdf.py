@@ -45,6 +45,7 @@ class ComicConverter:
         output_dir: Path | None = None,
         temp_prefix: str = "comics2pdf_",
         use_async: bool = True,
+        progress_callback=None,
     ):
         """
         Initialize the converter.
@@ -54,11 +55,15 @@ class ComicConverter:
             output_dir: Directory for output PDFs (default: same as input)
             temp_prefix: Prefix for temporary directories
             use_async: Use async processing for directories
+            progress_callback: Function to call with progress updates (total_files, completed_files, current_file)
         """
         self.verbose = verbose
         self.output_dir = output_dir
         self.temp_prefix = temp_prefix
         self.use_async = use_async
+        self.progress_callback = progress_callback
+        self.total_files = 0
+        self.completed_files = 0
 
     def collect_image_files(self, directory: Path) -> list[Path]:
         """Recursively collect all image files from directory."""
@@ -154,6 +159,9 @@ class ComicConverter:
 
     def convert_comic_to_pdf(self, file_path: Path) -> bool:
         """Convert a single comic file to PDF."""
+        if self.progress_callback:
+            self.progress_callback(self.total_files, self.completed_files, file_path.name)
+
         if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
             print(f"Unsupported file: {file_path.name}")
             return False
@@ -170,7 +178,14 @@ class ComicConverter:
                 return False
 
             output_path = self._get_output_path(file_path)
-            return self.convert_images_to_pdf(image_files, output_path)
+            success = self.convert_images_to_pdf(image_files, output_path)
+
+            if success:
+                self.completed_files += 1
+                if self.progress_callback:
+                    self.progress_callback(self.total_files, self.completed_files, f"✓ {file_path.name}")
+
+            return success
 
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -186,6 +201,9 @@ class ComicConverter:
         if not file_path.is_file():
             print(f"File not found: {file_path}")
             return False
+
+        self.total_files = 1
+        self.completed_files = 0
         return self.convert_comic_to_pdf(file_path)
 
     def process_directory_sync(self, directory_path: Path) -> None:
@@ -199,6 +217,9 @@ class ComicConverter:
         if not comic_files:
             print(f"No comic files found in {directory_path}")
             return
+
+        self.total_files = len(comic_files)
+        self.completed_files = 0
 
         print(f"Found {len(comic_files)} comic file(s) to convert")
 
@@ -216,6 +237,9 @@ class ComicConverter:
         if not comic_files:
             print(f"No comic files found in {directory_path}")
             return
+
+        self.total_files = len(comic_files)
+        self.completed_files = 0
 
         print(f"Found {len(comic_files)} comic file(s) to convert (async mode)")
 
