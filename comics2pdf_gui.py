@@ -1,37 +1,27 @@
 #!/usr/bin/env python3
-# Converts .cbr and .cbz files to .pdf
-# Author: PaulMonnery
-# Forked from:  MComas1
-# License:  You can do what you want with it.
-# Mainly based on a script by Bransorem (https://github.com/bransorem/comic2pdf)
 
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-from pathlib import Path
 import os
 import sys
-import zipfile
-import patoolib
-from PIL import Image
-import PIL.ExifTags
-import shutil
-import tempfile
-import platform
+from pathlib import Path
+
+from PyQt5 import QtCore, QtWidgets
+from comics2pdf import ComicConverter
+
 
 class Explorer(QtWidgets.QWidget):
 
-    def __init__(self, isFile):
+    def __init__(self, isFile: bool) -> None:
         super().__init__()
-        self.title = 'Explorer'
+        self.title = "Explorer"
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
-        self.path = ''
+        self.path = ""
         self.isFile = isFile
         self.initUI()
 
-    def initUI(self):
+    def initUI(self) -> None:
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
@@ -43,14 +33,15 @@ class Explorer(QtWidgets.QWidget):
         self.show()
         self.hide()
 
-    def openFileNameDialog(self):
+    def openFileNameDialog(self) -> None:
         options = QtWidgets.QFileDialog.Options()
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Find File", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options)
+            self, "Find File", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options
+        )
         if fileName:
             self.path = fileName
 
-    def openDirectoryNameDialog(self):
+    def openDirectoryNameDialog(self) -> None:
         options = QtWidgets.QFileDialog.Options()
         fileName = QtWidgets.QFileDialog.getExistingDirectory(self, options=options)
         if fileName:
@@ -59,81 +50,130 @@ class Explorer(QtWidgets.QWidget):
 
 class AppGUI(object):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.path = os.getcwd()
-        self.progress = 0
-        self.global_process = 0
-        self.nb_files = 0
-        self.done = 0
-        self.tmp_directory = tempfile.gettempdir()
-        self.current_os = platform.system()
+        self.path: str = os.getcwd()
+        self.output_path: str = ""
+        self.progress: int = 0
 
-    def separator(self):
-        if self.current_os == 'Windows':
-            return ('\\')
-        else:
-            return ('/')
-
-    def on_button_clicked(self):
+    def on_button_clicked(self) -> None:
         explorer = Explorer(self.file.isChecked())
-        if (explorer.path):
+        if explorer.path:
             self.path = explorer.path
         self.pathTo.setText(self.path)
 
-    def setupUi(self, Form):
+    def on_output_button_clicked(self) -> None:
+        options = QtWidgets.QFileDialog.Options()
+        output_dir = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Output Directory", options=options)
+        if output_dir:
+            self.output_path = output_dir
+            self.outputPathTo.setText(self.output_path)
+
+    def setupUi(self, Form: QtWidgets.QWidget) -> None:
         Form.setObjectName("Comics2pdf GUI")
-        Form.setFixedSize(536, 164)
+        Form.setFixedSize(536, 260)  # Keep same height
         self.error_dialog = QtWidgets.QErrorMessage()
 
-        self.convert = QtWidgets.QPushButton(Form)
-        self.convert.setGeometry(QtCore.QRect(420, 110, 91, 33))
-        self.convert.setObjectName("convert")
-        self.convert.clicked.connect(self.start_convert)
-
-        self.conversionProgress = QtWidgets.QProgressBar(Form)
-        self.conversionProgress.setGeometry(QtCore.QRect(20, 110, 381, 23))
-        self.conversionProgress.setProperty("value", self.progress)
-        self.conversionProgress.setObjectName("conversionProgress")
-
-        self.pathTo = QtWidgets.QLineEdit(Form)
-        self.pathTo.setGeometry(QtCore.QRect(20, 20, 371, 31))
-        self.pathTo.setObjectName("pathTo")
-
-        self.browse = QtWidgets.QPushButton(Form)
-        self.browse.setGeometry(QtCore.QRect(420, 20, 91, 33))
-        self.browse.setObjectName("browse")
-        self.browse.clicked.connect(self.on_button_clicked)
+        # Input type title and radio buttons
+        self.inputTypeLabel = QtWidgets.QLabel(Form)
+        self.inputTypeLabel.setGeometry(QtCore.QRect(20, 10, 100, 17))
+        self.inputTypeLabel.setText("Input Type:")
 
         self.inputType = QtWidgets.QButtonGroup(Form)
         self.inputType.setObjectName("inputType")
         self.folder = QtWidgets.QRadioButton(Form)
         self.folder.setObjectName("folder")
         self.folder.setChecked(True)
-        self.folder.setGeometry(QtCore.QRect(30, 70, 81, 20))
+        self.folder.setGeometry(QtCore.QRect(30, 30, 81, 20))
         self.file = QtWidgets.QRadioButton(Form)
         self.file.setObjectName("file")
         self.file.setChecked(False)
-        self.file.setGeometry(QtCore.QRect(120, 70, 81, 20))
+        self.file.setGeometry(QtCore.QRect(120, 30, 81, 20))
         self.inputType.addButton(self.folder)
         self.inputType.addButton(self.file)
 
+        # Processing mode title and radio buttons (same level as input type)
+        self.processingModeLabel = QtWidgets.QLabel(Form)
+        self.processingModeLabel.setGeometry(QtCore.QRect(250, 10, 120, 17))
+        self.processingModeLabel.setText("Processing Mode:")
+
+        self.processingMode = QtWidgets.QButtonGroup(Form)
+        self.processingMode.setObjectName("processingMode")
+        self.asyncMode = QtWidgets.QRadioButton(Form)
+        self.asyncMode.setObjectName("asyncMode")
+        self.asyncMode.setChecked(True)
+        self.asyncMode.setGeometry(QtCore.QRect(260, 30, 81, 20))
+        self.asyncMode.setText("Async")
+        self.syncMode = QtWidgets.QRadioButton(Form)
+        self.syncMode.setObjectName("syncMode")
+        self.syncMode.setChecked(False)
+        self.syncMode.setGeometry(QtCore.QRect(350, 30, 81, 20))
+        self.syncMode.setText("Sync")
+        self.processingMode.addButton(self.asyncMode)
+        self.processingMode.addButton(self.syncMode)
+
+        # Input path title and controls
+        self.inputPathLabel = QtWidgets.QLabel(Form)
+        self.inputPathLabel.setGeometry(QtCore.QRect(20, 60, 100, 17))
+        self.inputPathLabel.setText("Input Path")
+
+        self.pathTo = QtWidgets.QLineEdit(Form)
+        self.pathTo.setGeometry(QtCore.QRect(20, 80, 371, 31))
+        self.pathTo.setObjectName("pathTo")
+
+        self.browse = QtWidgets.QPushButton(Form)
+        self.browse.setGeometry(QtCore.QRect(420, 80, 91, 33))
+        self.browse.setObjectName("browse")
+        self.browse.clicked.connect(self.on_button_clicked)
+
+        # Output path controls
+        self.outputPathLabel = QtWidgets.QLabel(Form)
+        self.outputPathLabel.setGeometry(QtCore.QRect(20, 120, 100, 17))
+        self.outputPathLabel.setText("Output Path")
+
+        self.outputPathTo = QtWidgets.QLineEdit(Form)
+        self.outputPathTo.setGeometry(QtCore.QRect(20, 140, 371, 31))
+        self.outputPathTo.setObjectName("outputPathTo")
+        self.outputPathTo.setPlaceholderText("Leave empty to use same directory as input")
+
+        self.browseOutput = QtWidgets.QPushButton(Form)
+        self.browseOutput.setGeometry(QtCore.QRect(420, 140, 91, 33))
+        self.browseOutput.setObjectName("browseOutput")
+        self.browseOutput.setText("Browse")
+        self.browseOutput.clicked.connect(self.on_output_button_clicked)
+
+        # Progress bar and convert button on same line
+        self.conversionProgress = QtWidgets.QProgressBar(Form)
+        self.conversionProgress.setGeometry(QtCore.QRect(20, 190, 371, 23))
+        self.conversionProgress.setProperty("value", self.progress)
+        self.conversionProgress.setObjectName("conversionProgress")
+
+        self.convert = QtWidgets.QPushButton(Form)
+        self.convert.setGeometry(QtCore.QRect(420, 185, 91, 33))
+        self.convert.setObjectName("convert")
+        self.convert.clicked.connect(self.start_convert)
+
+        # Status labels with bigger text (full width)
         self.indication = QtWidgets.QLabel(Form)
         self.indication.setEnabled(False)
-        self.indication.setGeometry(QtCore.QRect(240, 70, 171, 17))
-        self.indication.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.indication.setGeometry(QtCore.QRect(20, 230, 400, 20))
         self.indication.setObjectName("indication")
+        font = self.indication.font()
+        font.setPointSize(10)
+        self.indication.setFont(font)
 
         self.ratio = QtWidgets.QLabel(Form)
         self.ratio.setEnabled(False)
-        self.ratio.setGeometry(QtCore.QRect(455, 70, 171, 17))
-        self.ratio.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.ratio.setGeometry(QtCore.QRect(430, 230, 80, 20))
         self.ratio.setObjectName("ratio")
+        font = self.ratio.font()
+        font.setPointSize(10)
+        self.ratio.setFont(font)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
-    def retranslateUi(self, Form):
+    def retranslateUi(self, Form: QtWidgets.QWidget) -> None:
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Comics2pdf GUI"))
         self.folder.setText(_translate("Form", "Folder"))
@@ -142,113 +182,53 @@ class AppGUI(object):
         self.file.setText(_translate("Form", "File"))
         self.pathTo.setText(_translate("Form", self.path))
 
-    def start_convert(self):
+    def progress_update_callback(self, total_files: int, completed_files: int, current_file: str) -> None:
+        """Callback for progress updates from ComicConverter."""
+        if total_files > 0:
+            progress_percent = int((completed_files / total_files) * 100)
+            self.conversionProgress.setProperty("value", progress_percent)
+
+        self.indication.setText(f"Processing: {current_file}")
+        self.ratio.setText(f"{completed_files}/{total_files}")
+
+        # Force GUI update
+        QtWidgets.QApplication.processEvents()
+
+    def start_convert(self) -> None:
+        # Create converter with current settings and progress callback
+        output_dir = Path(self.outputPathTo.text()) if self.outputPathTo.text().strip() else None
+        use_async = self.asyncMode.isChecked() and self.folder.isChecked()
+
+        converter = ComicConverter(
+            verbose=False, output_dir=output_dir, use_async=use_async, progress_callback=self.progress_update_callback
+        )
+
         self.indication.setEnabled(True)
         self.ratio.setEnabled(True)
-        if self.folder.isChecked() and os.path.isdir(self.pathTo.text()):
-            self.opendir(self.pathTo.text())
-        elif self.file.isChecked() and os.path.isfile(self.pathTo.text()):
-            self.nb_files += 1
-            self.launch_convert(self.pathTo.text())
-        else:
-            return
         self.conversionProgress.setProperty("value", 0)
-        self.nb_files = 0
-        self.global_process = 0
-        self.done = 0
-        self.indication.setText("")
+
+        # Clear previous status
+        self.indication.setText("Starting conversion...")
         self.ratio.setText("")
 
-    def opendir(self, directory):
-        directory_list = sorted(os.listdir(directory))
-        for file in directory_list:
-            if file.endswith(".cbz") or file.endswith(".CBZ") or file.endswith(".cbr") or file.endswith(".CBR"):
-                self.nb_files += 1
-        for file in directory_list:
-            self.launch_convert(directory + '/' + file)
-
-    def launch_convert(self, file):
-        if (file[-4:] == '.cbz' or file[-4:] == '.zip'):
-            self.handle_zip(file)
-        elif (file[-4:] == '.cbr' or file[-4:] == '.rar'):
-            self.handle_rar(file)
-
-    def handle_rar(self, filein):
-        tmp_dir = self.tmp_directory + self.separator() + "c2p" + self.separator()
         try:
-            os.mkdir(tmp_dir)
-        except:
-            print("Temporary folder already exists")
-        patoolib.extract_archive(filein, outdir=tmp_dir)
-        newfile = filein.replace(filein[-4:], ".pdf")
-        self.to_pdf(newfile, tmp_dir)
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    def handle_zip(self, filein):
-        tmp_dir = self.tmp_directory + self.separator() + "c2p" + self.separator()
-        zip_ref = zipfile.ZipFile(filein, 'r')
-        zip_ref.extractall(tmp_dir)
-        zip_ref.close()
-        newfile = filein.replace(filein[-4:], ".pdf")
-        self.to_pdf(newfile, tmp_dir)
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-
-    def get_files(self, f, dir):
-        files = os.listdir(dir)
-        for file in files:
-            path = dir + self.separator() + file
-            if os.path.isdir(path):
-                self.get_files(f, path)
+            if self.folder.isChecked() and os.path.isdir(self.pathTo.text()):
+                converter.process_directory(Path(self.pathTo.text()))
+            elif self.file.isChecked() and os.path.isfile(self.pathTo.text()):
+                converter.process_single_file(Path(self.pathTo.text()))
             else:
-                f.append(path)
+                self.indication.setText("Invalid path or file not found")
+                return
 
+            # Conversion completed
+            self.conversionProgress.setProperty("value", 100)
+            self.indication.setText("All conversions completed!")
 
-    def to_pdf(self, filename, newdir):
-        self.indication.setText("Exctracting images...")
-        self.ratio.setText(str(self.done) + self.separator() + str(self.nb_files))
+        except Exception as e:
+            self.indication.setText(f"Error: {str(e)}")
 
-        image_list = []
-        self.get_files(image_list,  newdir)
-
-        im_list = list()
-        is_first_image = True
-        im = None
-        increased = False
-        index = 0
-        list_len = len(image_list)
-
-        for image in sorted(image_list):
-            index += 1
-            local_process = index / list_len * 100 // self.nb_files
-            self.conversionProgress.setProperty("value", "{0:.0f}".format(local_process + self.global_process))
-
-            if local_process * self.nb_files > 95:
-                if increased == False:
-                    self.done += 1
-                    increased = True
-                self.indication.setText("Saving the created file...")
-                self.ratio.setText(str(self.done) + '/' + str(self.nb_files))
-            img = Image.open(image)
-
-            try:
-                if img.mode == 'RGBA':
-                    img = img.convert('RGB')
-                img.save(image, dpi=(96, 96))
-            except:
-                print("Error")
-
-            if (is_first_image):
-                im = img
-                is_first_image = False
-            else:
-                im_list.append(img)
-
-        im.save(filename, "PDF", resolution=100.0, save_all=True, append_images=im_list)
-        shutil.rmtree(newdir, ignore_errors=True)
-        self.global_process += local_process
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     Form = QtWidgets.QWidget()
     ui = AppGUI()

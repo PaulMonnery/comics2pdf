@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "comics2pdf"
+version = "0.1.0"
+description = ""
+authors = ["Paul Monnery <paul.monnery@ramify.fr>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+patoolib = "^0.0.1"
+pillow = "^11.2.1"
+pyqt5 = "^5.15.11"
+rarfile = "^4.2"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+flake8 = "^7.3.0"
+flake8-quotes = "^3.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
