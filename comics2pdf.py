@@ -4,27 +4,18 @@ import os
 import sys
 import shutil
 import tempfile
-import platform
 
 import zipfile
 import patoolib
 from PIL import Image
 
 tmp_directory = tempfile.gettempdir()
-current_os = platform.system()
-
-
-def separator():
-    if current_os == "Windows":
-        return "\\"
-    else:
-        return "/"
 
 
 def handle_rar(file_to_exctract, tmp_dir):
     try:
         os.mkdir(tmp_dir)
-    except:
+    except OSError:
         print("Temporary folder already exists")
     print("Extracting pictures in the CBR file...")
     patoolib.extract_archive(file_to_exctract, outdir=tmp_dir)
@@ -32,7 +23,8 @@ def handle_rar(file_to_exctract, tmp_dir):
     print("Creating the PDF file...")
     to_pdf(newfile, tmp_dir)
     shutil.rmtree(tmp_dir, ignore_errors=True)
-    print("\x1b[1;32m" + '"' + newfile[:-4] + '" successfully converted!' + "\x1b[0m")
+    converted_name = newfile[:-4]
+    print(f'\x1b[1;32m"{converted_name}" successfully converted!\x1b[0m')
 
 
 def handle_zip(file_to_exctract, tmp_dir):
@@ -44,13 +36,14 @@ def handle_zip(file_to_exctract, tmp_dir):
     print("Creating the PDF file...")
     to_pdf(newfile, tmp_dir)
     shutil.rmtree(tmp_dir, ignore_errors=True)
-    print("\x1b[1;32m" + '"' + newfile[:-4] + '" successfully converted!' + "\x1b[0m")
+    converted_name = newfile[:-4]
+    print(f'\x1b[1;32m"{converted_name}" successfully converted!\x1b[0m')
 
 
 def get_files(f, dir):
     files = os.listdir(dir)
     for file in files:
-        path = dir + separator() + file
+        path = os.path.join(dir, file)
         if os.path.isdir(path):
             get_files(f, path)
         else:
@@ -76,8 +69,8 @@ def to_pdf(filename, newdir):
             if img.mode == "RGBA":
                 img = img.convert("RGB")
             img.save(image, dpi=(96, 96))
-        except:
-            print("Error")
+        except (OSError, IOError) as e:
+            print(f"Error processing image {image}: {e}")
 
         if is_first_image:
             im = img
@@ -90,7 +83,7 @@ def to_pdf(filename, newdir):
 
 
 def launch_convert(file):
-    tmp_dir = tmp_directory + separator() + "c2p" + separator()
+    tmp_dir = os.path.join(tmp_directory, "c2p")
     if file[-4:] == ".cbz" or file[-4:] == ".zip":
         handle_zip(file, tmp_dir)
     elif file[-4:] == ".cbr" or file[-4:] == ".rar":
@@ -99,7 +92,7 @@ def launch_convert(file):
 
 def opendir(directory):
     for file in sorted(os.listdir(directory)):
-        launch_convert(directory + separator() + file)
+        launch_convert(os.path.join(directory, file))
 
 
 if __name__ == "__main__":
@@ -109,10 +102,16 @@ if __name__ == "__main__":
         elif sys.argv[1] == "-f" and os.path.isfile(sys.argv[2]):
             launch_convert(sys.argv[2])
         else:
-            print(
-                "Bad argument. Please use:\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file"
+            usage_msg = (
+                "Bad argument. Please use:\n"
+                "\t-d [path/to/folder] to all files in folder\n"
+                "\t-f [path/to/file] to convert a single file"
             )
+            print(usage_msg)
     else:
-        print(
-            "Please specifie arguments.\n\t-d [path/to/folder] to all files in folder\n\t-f [path/to/file] to convert a single file"
+        help_msg = (
+            "Please specifie arguments.\n"
+            "\t-d [path/to/folder] to all files in folder\n"
+            "\t-f [path/to/file] to convert a single file"
         )
+        print(help_msg)
