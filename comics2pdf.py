@@ -4,6 +4,7 @@ import sys
 import shutil
 import tempfile
 import asyncio
+import argparse
 from pathlib import Path
 from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
@@ -188,34 +189,36 @@ async def process_directory_async(directory_path: Path) -> None:
 
 def main() -> None:
     """Main entry point."""
-    if len(sys.argv) < 3:
-        print(
-            "Usage:\n"
-            "  -d <directory>  Convert all comic files in directory\n"
-            "  -f <file>       Convert a single comic file\n"
-            "  --sync          Force synchronous processing for directories"
-        )
+    parser = argparse.ArgumentParser(description="Convert comic archives (CBZ/CBR) to PDF files")
+
+    # Mutually exclusive group for mode selection
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument("-d", type=Path, metavar="DIR", help="Convert all comic files in directory")
+    mode_group.add_argument("-f", type=Path, metavar="FILE", help="Convert a single comic file")
+
+    parser.add_argument(
+        "--sync", action="store_true", help="Force synchronous processing (default is async for directories)"
+    )
+
+    if len(sys.argv) == 1:
+        parser.print_help()
         return
 
-    use_sync = "--sync" in sys.argv
-    if use_sync:
-        sys.argv.remove("--sync")
+    args = parser.parse_args()
 
-    mode = sys.argv[1]
-    target_path = Path(sys.argv[2])
-
-    if mode == "-d":
-        if use_sync:
-            process_directory(target_path)
-        else:
-            asyncio.run(process_directory_async(target_path))
-    elif mode == "-f":
-        if not target_path.is_file():
-            print(f"File not found: {target_path}")
+    if args.d:
+        if not args.d.is_dir():
+            print(f"Directory not found: {args.d}")
             return
-        convert_comic_to_pdf(target_path)
-    else:
-        print(f"Invalid mode: {mode}. Use -d for directory or -f for file")
+        if args.sync:
+            process_directory(args.d)
+        else:
+            asyncio.run(process_directory_async(args.d))
+    elif args.file:
+        if not args.file.is_file():
+            print(f"File not found: {args.file}")
+            return
+        convert_comic_to_pdf(args.file)
 
 
 if __name__ == "__main__":
