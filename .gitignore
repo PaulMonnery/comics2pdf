@@ -3,5 +3,6 @@ data/
 target/
 src/
 .vscode
+__pycache__/
 *~
 *.ui
