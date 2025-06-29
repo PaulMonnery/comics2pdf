@@ -6,7 +6,7 @@ import shutil
 import tempfile
 
 import zipfile
-import patoolib
+import rarfile
 from PIL import Image
 
 tmp_directory = tempfile.gettempdir()
@@ -17,8 +17,15 @@ def handle_rar(file_to_exctract, tmp_dir):
         os.mkdir(tmp_dir)
     except OSError:
         print("Temporary folder already exists")
+
     print("Extracting pictures in the CBR file...")
-    patoolib.extract_archive(file_to_exctract, outdir=tmp_dir)
+    try:
+        with rarfile.RarFile(file_to_exctract) as rf:
+            rf.extractall(tmp_dir)
+    except rarfile.Error as e:
+        print(f"Error extracting RAR file: {e}")
+        return
+
     newfile = file_to_exctract.replace(file_to_exctract[-4:], ".pdf")
     print("Creating the PDF file...")
     to_pdf(newfile, tmp_dir)

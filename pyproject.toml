@@ -9,8 +9,8 @@ readme = "README.md"
 python = "^3.10"
 patoolib = "^0.0.1"
 pillow = "^11.2.1"
-zipfile36 = "^0.1.3"
 pyqt5 = "^5.15.11"
+rarfile = "^4.2"
 
 
 [tool.poetry.group.dev.dependencies]
