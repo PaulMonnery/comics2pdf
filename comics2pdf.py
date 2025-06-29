@@ -193,24 +193,22 @@ def main() -> None:
             "Usage:\n"
             "  -d <directory>  Convert all comic files in directory\n"
             "  -f <file>       Convert a single comic file\n"
-            "  --async         Enable async processing for directories"
+            "  --sync          Force synchronous processing for directories"
         )
         return
 
-    use_async = "--async" in sys.argv
-    if use_async:
-        sys.argv.remove("--async")
+    use_sync = "--sync" in sys.argv
+    if use_sync:
+        sys.argv.remove("--sync")
 
     mode = sys.argv[1]
     target_path = Path(sys.argv[2])
 
-    print(use_async)
-
     if mode == "-d":
-        if use_async:
-            asyncio.run(process_directory_async(target_path))
-        else:
+        if use_sync:
             process_directory(target_path)
+        else:
+            asyncio.run(process_directory_async(target_path))
     elif mode == "-f":
         if not target_path.is_file():
             print(f"File not found: {target_path}")
