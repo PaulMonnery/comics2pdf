@@ -3,8 +3,10 @@
 import sys
 import shutil
 import tempfile
+import asyncio
 from pathlib import Path
 from enum import Enum
+from concurrent.futures import ThreadPoolExecutor
 import zipfile
 
 import rarfile
@@ -44,19 +46,21 @@ def collect_image_files(directory: Path) -> list[Path]:
     return sorted(image_files)
 
 
-def extract_archive(archive_path: Path, extract_to: Path) -> bool:
+def extract_archive(archive_path: Path, extract_to: Path, verbose: bool = True) -> bool:
     """Extract archive to specified directory. Returns True on success."""
     try:
         extract_to.mkdir(parents=True, exist_ok=True)
 
         ext = archive_path.suffix.lower()
         if ext in {SupportedExtensions.CBZ.value, SupportedExtensions.ZIP.value}:
-            print("Extracting pictures from CBZ/ZIP file...")
+            if verbose:
+                print(f"Extracting pictures from CBZ/ZIP file: {archive_path.name}")
             with zipfile.ZipFile(archive_path, "r") as zip_file:
                 zip_file.extractall(extract_to)
 
         elif ext in {SupportedExtensions.CBR.value, SupportedExtensions.RAR.value}:
-            print("Extracting pictures from CBR/RAR file...")
+            if verbose:
+                print(f"Extracting pictures from CBR/RAR file: {archive_path.name}")
             with rarfile.RarFile(archive_path) as rar_file:
                 rar_file.extractall(extract_to)
         else:
@@ -65,24 +69,29 @@ def extract_archive(archive_path: Path, extract_to: Path) -> bool:
 
         return True
 
-    except (zipfile.BadZipFile, rarfile.Error, OSError) as e:
+    except (zipfile.BadZipFile, rarfile.BadRarFile, OSError) as e:
         print(f"Error extracting {archive_path.name}: {e}")
         return False
 
 
-def convert_images_to_pdf(image_files: list[Path], output_path: Path) -> bool:
+def convert_images_to_pdf(image_files: list[Path], output_path: Path, verbose: bool = True) -> bool:
     """Convert list of image files to a single PDF."""
+
     if not image_files:
-        print("No image files found to convert")
+        if verbose:
+            print("No image files found to convert")
         return False
 
     converted_images: list[ImageFile | Image] = []
     total_files = len(image_files)
 
-    print("Converting images...")
+    if verbose:
+        print("Converting images...")
+
     for index, image_path in enumerate(image_files, 1):
         try:
-            print(f"Processing: {index}/{total_files} ({index/total_files*100:.0f}%)", end="\r")
+            if verbose:
+                print(f"Processing: {index}/{total_files} ({index/total_files*100:.0f}%)", end="\r")
 
             with ImageOpen(image_path) as img:
                 if img.mode in ("RGBA", "P"):
@@ -98,7 +107,8 @@ def convert_images_to_pdf(image_files: list[Path], output_path: Path) -> bool:
         return False
 
     try:
-        print(f"\nSaving PDF: {output_path.name}")
+        if verbose:
+            print(f"\nSaving PDF: {output_path.name}")
         first_image = converted_images[0]
         remaining_images = converted_images[1:] if len(converted_images) > 1 else []
 
@@ -111,7 +121,7 @@ def convert_images_to_pdf(image_files: list[Path], output_path: Path) -> bool:
         return False
 
 
-def convert_comic_to_pdf(file_path: Path) -> bool:
+def convert_comic_to_pdf(file_path: Path, verbose: bool = True) -> bool:
     """Convert a single comic file to PDF."""
     if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
         print(f"Unsupported file: {file_path.name}")
@@ -120,7 +130,7 @@ def convert_comic_to_pdf(file_path: Path) -> bool:
     temp_dir = Path(tempfile.mkdtemp(prefix="comics2pdf_"))
 
     try:
-        if not extract_archive(file_path, temp_dir):
+        if not extract_archive(file_path, temp_dir, verbose):
             return False
 
         image_files = collect_image_files(temp_dir)
@@ -129,15 +139,14 @@ def convert_comic_to_pdf(file_path: Path) -> bool:
             return False
 
         output_path = file_path.with_suffix(".pdf")
-
-        convert_images_to_pdf(image_files, output_path)
+        return convert_images_to_pdf(image_files, output_path, verbose)
 
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def process_directory(directory_path: Path) -> None:
-    """Process all comic files in a directory."""
+    """Process all comic files in a directory synchronously."""
     if not directory_path.is_dir():
         print(f"Directory not found: {directory_path}")
         return
@@ -154,21 +163,54 @@ def process_directory(directory_path: Path) -> None:
         convert_comic_to_pdf(comic_file)
 
 
+async def process_directory_async(directory_path: Path) -> None:
+    """Process all comic files in a directory concurrently using thread pool."""
+    if not directory_path.is_dir():
+        print(f"Directory not found: {directory_path}")
+        return
+
+    comic_files = [f for f in directory_path.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS]
+
+    if not comic_files:
+        print(f"No comic files found in {directory_path}")
+        return
+
+    print(f"Found {len(comic_files)} comic file(s) to convert (async mode)")
+
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor() as executor:
+        tasks = [
+            loop.run_in_executor(executor, convert_comic_to_pdf, comic_file, False)
+            for comic_file in sorted(comic_files)
+        ]
+        await asyncio.gather(*tasks)
+
+
 def main() -> None:
     """Main entry point."""
     if len(sys.argv) < 3:
         print(
             "Usage:\n"
             "  -d <directory>  Convert all comic files in directory\n"
-            "  -f <file>       Convert a single comic file"
+            "  -f <file>       Convert a single comic file\n"
+            "  --async         Enable async processing for directories"
         )
         return
+
+    use_async = "--async" in sys.argv
+    if use_async:
+        sys.argv.remove("--async")
 
     mode = sys.argv[1]
     target_path = Path(sys.argv[2])
 
+    print(use_async)
+
     if mode == "-d":
-        process_directory(target_path)
+        if use_async:
+            asyncio.run(process_directory_async(target_path))
+        else:
+            process_directory(target_path)
     elif mode == "-f":
         if not target_path.is_file():
             print(f"File not found: {target_path}")
