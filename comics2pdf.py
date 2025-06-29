@@ -191,7 +191,6 @@ def main() -> None:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Convert comic archives (CBZ/CBR) to PDF files")
 
-    # Mutually exclusive group for mode selection
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument("-d", type=Path, metavar="DIR", help="Convert all comic files in directory")
     mode_group.add_argument("-f", type=Path, metavar="FILE", help="Convert a single comic file")
