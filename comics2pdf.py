@@ -13,6 +13,7 @@ import zipfile
 import rarfile
 from PIL.ImageFile import ImageFile
 from PIL.Image import Image, open as ImageOpen
+from typing import Callable, Optional
 
 
 class SupportedExtensions(Enum):
@@ -42,10 +43,10 @@ class ComicConverter:
     def __init__(
         self,
         verbose: bool = True,
-        output_dir: Path | None = None,
+        output_dir: Optional[Path] = None,
         temp_prefix: str = "comics2pdf_",
         use_async: bool = True,
-        progress_callback=None,
+        progress_callback: Optional[Callable[[int, int, str], None]] = None,
     ):
         """
         Initialize the converter.
