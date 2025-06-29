@@ -4,14 +4,14 @@ import sys
 import shutil
 import tempfile
 from pathlib import Path
-
-import zipfile
-import rarfile
-from PIL import Image
 from enum import Enum
+import zipfile
+
+import rarfile
+from PIL.ImageFile import ImageFile
+from PIL.Image import Image, open as ImageOpen
 
 
-# Constants
 class SupportedExtensions(Enum):
     CBZ = ".cbz"
     ZIP = ".zip"
@@ -76,7 +76,7 @@ def convert_images_to_pdf(image_files: list[Path], output_path: Path) -> bool:
         print("No image files found to convert")
         return False
 
-    converted_images = []
+    converted_images: list[ImageFile | Image] = []
     total_files = len(image_files)
 
     print("Converting images...")
@@ -84,8 +84,7 @@ def convert_images_to_pdf(image_files: list[Path], output_path: Path) -> bool:
         try:
             print(f"Processing: {index}/{total_files} ({index/total_files*100:.0f}%)", end="\r")
 
-            with Image.open(image_path) as img:
-                # Convert RGBA to RGB for PDF compatibility
+            with ImageOpen(image_path) as img:
                 if img.mode in ("RGBA", "P"):
                     img = img.convert("RGB")
                 converted_images.append(img.copy())
