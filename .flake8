@@ -1,0 +1,5 @@
+[flake8]
+inline-quotes = double
+max-line-length = 120
+extend-ignore = E203
+exclude = .pytest_cache,__pycache__,alembic,quantitative_investment,scpi
