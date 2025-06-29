@@ -1,33 +1,27 @@
 #!/usr/bin/env python3
-# Converts .cbr and .cbz files to .pdf
-# Author: PaulMonnery
-# Forked from:  MComas1
-# License:  You can do what you want with it.
-# Mainly based on a script by Bransorem (https://github.com/bransorem/comic2pdf)
 
-
-from PyQt5 import QtCore, QtGui, QtWidgets
-from pathlib import Path
 import os
 import sys
-import zipfile
-import patoolib
-from PIL import Image
-import PIL.ExifTags
 import shutil
 import tempfile
 import platform
+
+import zipfile
+import patoolib
+from PyQt5 import QtCore, QtWidgets
+from PIL import Image
+
 
 class Explorer(QtWidgets.QWidget):
 
     def __init__(self, isFile):
         super().__init__()
-        self.title = 'Explorer'
+        self.title = "Explorer"
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
-        self.path = ''
+        self.path = ""
         self.isFile = isFile
         self.initUI()
 
@@ -46,7 +40,8 @@ class Explorer(QtWidgets.QWidget):
     def openFileNameDialog(self):
         options = QtWidgets.QFileDialog.Options()
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Find File", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options)
+            self, "Find File", "", "CBR and CBZ files (*.cbr, *.cbz)", options=options
+        )
         if fileName:
             self.path = fileName
 
@@ -70,14 +65,14 @@ class AppGUI(object):
         self.current_os = platform.system()
 
     def separator(self):
-        if self.current_os == 'Windows':
-            return ('\\')
+        if self.current_os == "Windows":
+            return "\\"
         else:
-            return ('/')
+            return "/"
 
     def on_button_clicked(self):
         explorer = Explorer(self.file.isChecked())
-        if (explorer.path):
+        if explorer.path:
             self.path = explorer.path
         self.pathTo.setText(self.path)
 
@@ -165,12 +160,12 @@ class AppGUI(object):
             if file.endswith(".cbz") or file.endswith(".CBZ") or file.endswith(".cbr") or file.endswith(".CBR"):
                 self.nb_files += 1
         for file in directory_list:
-            self.launch_convert(directory + '/' + file)
+            self.launch_convert(directory + "/" + file)
 
     def launch_convert(self, file):
-        if (file[-4:] == '.cbz' or file[-4:] == '.zip'):
+        if file[-4:] == ".cbz" or file[-4:] == ".zip":
             self.handle_zip(file)
-        elif (file[-4:] == '.cbr' or file[-4:] == '.rar'):
+        elif file[-4:] == ".cbr" or file[-4:] == ".rar":
             self.handle_rar(file)
 
     def handle_rar(self, filein):
@@ -186,7 +181,7 @@ class AppGUI(object):
 
     def handle_zip(self, filein):
         tmp_dir = self.tmp_directory + self.separator() + "c2p" + self.separator()
-        zip_ref = zipfile.ZipFile(filein, 'r')
+        zip_ref = zipfile.ZipFile(filein, "r")
         zip_ref.extractall(tmp_dir)
         zip_ref.close()
         newfile = filein.replace(filein[-4:], ".pdf")
@@ -202,13 +197,12 @@ class AppGUI(object):
             else:
                 f.append(path)
 
-
     def to_pdf(self, filename, newdir):
         self.indication.setText("Exctracting images...")
         self.ratio.setText(str(self.done) + self.separator() + str(self.nb_files))
 
         image_list = []
-        self.get_files(image_list,  newdir)
+        self.get_files(image_list, newdir)
 
         im_list = list()
         is_first_image = True
@@ -227,17 +221,17 @@ class AppGUI(object):
                     self.done += 1
                     increased = True
                 self.indication.setText("Saving the created file...")
-                self.ratio.setText(str(self.done) + '/' + str(self.nb_files))
+                self.ratio.setText(str(self.done) + "/" + str(self.nb_files))
             img = Image.open(image)
 
             try:
-                if img.mode == 'RGBA':
-                    img = img.convert('RGB')
+                if img.mode == "RGBA":
+                    img = img.convert("RGB")
                 img.save(image, dpi=(96, 96))
             except:
                 print("Error")
 
-            if (is_first_image):
+            if is_first_image:
                 im = img
                 is_first_image = False
             else:
@@ -247,8 +241,8 @@ class AppGUI(object):
         shutil.rmtree(newdir, ignore_errors=True)
         self.global_process += local_process
 
+
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     Form = QtWidgets.QWidget()
     ui = AppGUI()
