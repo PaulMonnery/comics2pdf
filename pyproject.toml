@@ -7,7 +7,6 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-patoolib = "^0.0.1"
 pillow = "^11.2.1"
 pyqt5 = "^5.15.11"
 rarfile = "^4.2"

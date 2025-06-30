@@ -146,16 +146,6 @@ files = [
 ]
 
 [[package]]
-name = "patoolib"
-version = "0.0.1"
-description = "Minimal package created automatically"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "patoolib-0.0.1.tar.gz", hash = "sha256:8c16c059cfb3e145b2b6321121aa1924992d29dcae7177abc0f8174020e6ab4a"},
-]
-
-[[package]]
 name = "pillow"
 version = "11.2.1"
 description = "Python Imaging Library (Fork)"
@@ -439,4 +429,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3558495af8da771bc507daf9bb36760b3f23a39d714ea1c4080ec70b88523f0a"
+content-hash = "a783bc545e25d2f47e9fe6efae3d4c9ed6a202ee54915bc08ef64a26aaa55d25"
